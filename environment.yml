@@ -1,0 +1,25 @@
+name: forecast-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - statsmodels
+  - pmdarima  # Auto ARIMA
+  - xgboost
+  - lightgbm
+  - prophet  # Para forecasting con Prophet
+  - scipy
+  - arch  # Pruebas de cointegración y volatilidad
+  - jupyter
+  - jupyterlab
+  - ipykernel
+  - tqdm  # Para visualización de procesos largos
+  - pip
+  - pip:
+  - darts  # Librería para múltiples técnicas de forecasting
