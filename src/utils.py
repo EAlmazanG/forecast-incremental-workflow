@@ -3,9 +3,19 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join('..')))
 
-import pandas as pd
 import numpy as np
-import math
+import pandas as pd
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import seaborn as sns
+
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from scipy.stats import boxcox
+
 
 def print_title(title, line_length = 60, symbol = '-'):
     separator = symbol * ((line_length - len(title) - 2) // 2)
@@ -60,3 +70,48 @@ def detect_outliers(df, method="iqr", threshold=1.5):
         df_outliers["is_outlier"] = df_outliers.apply(lambda row: row['zscore_outlier'] or row['iqr_outlier'], axis=1)
 
     return df_outliers
+
+def check_transformations(df_selection):
+    numeric_vars = df_selection.select_dtypes(include=["number"]).columns
+    transformations_needed = {}
+
+    for col in numeric_vars:
+        result = {}
+
+        p_value = adfuller(df_selection[col].dropna())[1]
+        result["stationary"] = p_value < 0.05  # True = Stationary, False = Not Stationary
+        
+        if not result["stationary"]:  # If not stationary
+            if df_selection[col].min() > 0:  # Check if all values are positive
+                boxcox_lambda = boxcox(df_selection[col] + 1)[1]  # +1 to avoid log(0) errors
+                if abs(boxcox_lambda - 1) > 0.1:
+                    result["recommended_transformation"] = "boxcox"
+                else:
+                    result["recommended_transformation"] = "log"
+            else:
+                result["recommended_transformation"] = "diff"
+        else:
+            result["recommended_transformation"] = "none"
+        
+        transformations_needed[col] = result
+
+    transformations_df = pd.DataFrame(transformations_needed).T
+    print(transformations_df)
+    return transformations_df
+        
+
+def apply_transformations(df_selection, transformations):
+    df_transformed = df_selection.copy()
+    for col, row in transformations.iterrows():
+        transformation = row["recommended_transformation"]
+        
+        if transformation == "diff":
+            df_transformed[col] = df_selection[col].diff().dropna()
+        elif transformation == "log":
+            df_transformed[col] = np.log1p(df_selection[col])  # log1p avoids log(0) issues
+        elif transformation == "boxcox":
+            df_transformed[col], _ = boxcox(df_selection[col] + 1)  # +1 to handle zero values
+
+    print("Transformations applied successfully.")
+    display(df_transformed.head())
+    return df_transformed
