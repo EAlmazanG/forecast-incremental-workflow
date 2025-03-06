@@ -99,7 +99,6 @@ def check_transformations(df_selection):
     print(transformations_df)
     return transformations_df
         
-
 def apply_transformations(df_selection, transformations):
     df_transformed = df_selection.copy()
     for col, row in transformations.iterrows():
@@ -115,3 +114,20 @@ def apply_transformations(df_selection, transformations):
     print("Transformations applied successfully.")
     display(df_transformed.head())
     return df_transformed
+
+def plot_acf_and_pacf(input_df, additional_text = ''):
+    fig, axes = plt.subplots(1, 2, figsize=(16, 3))
+
+    plot_acf(input_df, ax=axes[0], lags=50)
+    plot_pacf(input_df, ax=axes[1], lags=50)
+
+    axes[0].set_title("ACF" + additional_text, fontsize=14, fontweight='bold')
+    axes[1].set_title("PACF" + additional_text, fontsize=14, fontweight='bold')
+
+    for ax in axes:
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.grid(True, linestyle="--", alpha=0.4)
+
+    plt.tight_layout()
+    plt.show()
