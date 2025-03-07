@@ -131,3 +131,72 @@ def plot_acf_and_pacf(input_df, additional_text = ''):
 
     plt.tight_layout()
     plt.show()
+
+def plot_time_series(df, time_series, p_alpha = 0.9, p_linestyle = "--"):
+    fig, ax = plt.subplots(figsize=(20,6))
+    
+    colors = plt.get_cmap("tab10")(range(len(time_series)))
+    for i, serie in enumerate(time_series):
+        alpha = p_alpha if i > 0 else 1
+        linestyle = p_linestyle if i > 0 else "-"
+        
+        ax.plot(df['date'], df[serie], label=serie, linewidth=2, color=colors[i], alpha=alpha, linestyle=linestyle)
+
+    ax.set_title("Bikes rented", fontsize=14, fontweight='bold')
+
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax.tick_params(axis='y', labelsize=10)
+
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend(frameon=False, fontsize=12)
+
+    plt.show()
+
+def check_transformations(df_selection):
+    numeric_vars = df_selection.select_dtypes(include=["number"]).columns
+    transformations_needed = {}
+
+    for col in numeric_vars:
+        result = {}
+
+        p_value = adfuller(df_selection[col].dropna())[1]
+        result["stationary"] = p_value < 0.05  # True = Stationary, False = Not Stationary
+        
+        if not result["stationary"]:  # If not stationary
+            if df_selection[col].min() > 0:  # Check if all values are positive
+                boxcox_lambda = boxcox(df_selection[col] + 1)[1]  # +1 to avoid log(0) errors
+                if abs(boxcox_lambda - 1) > 0.1:
+                    result["recommended_transformation"] = "boxcox"
+                else:
+                    result["recommended_transformation"] = "log"
+            else:
+                result["recommended_transformation"] = "diff"
+        else:
+            result["recommended_transformation"] = "none"
+        
+        transformations_needed[col] = result
+
+    transformations_df = pd.DataFrame(transformations_needed).T
+    print(transformations_df)
+    return transformations_df
+        
+
+def apply_transformations(df_selection, transformations):
+    df_transformed = df_selection.copy()
+    for col, row in transformations.iterrows():
+        transformation = row["recommended_transformation"]
+        
+        if transformation == "diff":
+            df_transformed[col] = df_selection[col].diff().dropna()
+        elif transformation == "log":
+            df_transformed[col] = np.log1p(df_selection[col])  # log1p avoids log(0) issues
+        elif transformation == "boxcox":
+            df_transformed[col], _ = boxcox(df_selection[col] + 1)  # +1 to handle zero values
+
+    print("Transformations applied successfully.")
+    display(df_transformed.head())
+    return df_transformed
