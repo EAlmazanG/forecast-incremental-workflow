@@ -45,7 +45,7 @@ def plot_time_series_forecast(df, time_series, p_alpha=0.9, p_linestyle="--", pl
         if i > 0 and plot_ci:
             mean_forecast = df.loc[future_mask, serie]
 
-            past_errors = df.loc[~future_mask, forecast_column] - df.loc[~future_mask, serie]
+            past_errors = df.loc[~future_mask, time_series[0]] - df.loc[~future_mask, serie]
             std_dev = past_errors.std()  
             
             forecast_horizon = np.arange(1, len(mean_forecast) + 1) 
@@ -264,20 +264,20 @@ def format_comparison_results(comparison_results):
 
     return df_metrics
 
-def validate_forecast(df_naive, df_forecast, df_baseline, to_forecast_column, forecasted_column):
-    plot_time_series_forecast(df_forecast, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
+def validate_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column):
+    plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
 
-    model_metrics = calculate_forecast_metrics(df_naive, df_forecast, to_forecast_column, forecasted_column)
+    model_metrics = calculate_forecast_metrics(naive_df, forecast_df, to_forecast_column, forecasted_column)
 
-    walk_results = walk_forward_validation(df_naive, df_forecast, to_forecast_column, forecasted_column, steps=30, n_splits=5)
-    expanding_results = expanding_window_validation(df_naive, df_forecast, to_forecast_column, forecasted_column, steps=30, initial_train_size=100)
-    rolling_results = rolling_window_validation(df_naive, df_forecast, to_forecast_column, forecasted_column, steps=30, window_size=100)
+    walk_results = walk_forward_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, n_splits=5)
+    expanding_results = expanding_window_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, initial_train_size=100)
+    rolling_results = rolling_window_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, window_size=100)
 
     plot_validation_results(walk_results, expanding_results, rolling_results)
 
-    check_forecast_residuals(df_forecast, to_forecast_column, forecasted_column)
+    check_forecast_residuals(forecast_df, to_forecast_column, forecasted_column)
 
-    comparison_results = compare_forecast_models(df_naive, df_baseline, df_forecast, to_forecast_column, forecasted_column)
-    df_formatted = format_comparison_results(comparison_results)
-    display(df_formatted)
+    comparison_results = compare_forecast_models(naive_df, baseline_df, forecast_df, to_forecast_column, forecasted_column)
+    formatted_results_df = format_comparison_results(comparison_results)
+    display(formatted_results_df)
     return model_metrics, comparison_results
