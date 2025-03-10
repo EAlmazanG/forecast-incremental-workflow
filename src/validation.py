@@ -281,3 +281,14 @@ def validate_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, fo
     formatted_results_df = format_comparison_results(comparison_results)
     display(formatted_results_df)
     return model_metrics, comparison_results
+
+def test_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, n_test = 60):
+    print_title('TEST TEMPORAL BACKTESTING')
+    plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
+
+    model_metrics = calculate_forecast_metrics(naive_df, forecast_df, to_forecast_column, forecasted_column)
+
+    comparison_results = compare_forecast_models(naive_df[:-n_test], baseline_df[:-n_test], forecast_df[:-n_test], to_forecast_column, forecasted_column)
+    formatted_results_df = format_comparison_results(comparison_results)
+    display(formatted_results_df)
+    return model_metrics, comparison_results
