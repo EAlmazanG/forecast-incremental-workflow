@@ -264,31 +264,39 @@ def format_comparison_results(comparison_results):
 
     return df_metrics
 
-def validate_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, baseline_column = 'naive_forecast'):
-    plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
+def validate_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, baseline_column = 'naive_forecast', plot_results = True):
+    if plot_results:
+        plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
 
     model_metrics = calculate_forecast_metrics(naive_df, forecast_df, to_forecast_column, forecasted_column)
-
-    walk_results = walk_forward_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, n_splits=5)
-    expanding_results = expanding_window_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, initial_train_size=100)
-    rolling_results = rolling_window_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, window_size=100)
-
-    plot_validation_results(walk_results, expanding_results, rolling_results)
-
-    check_forecast_residuals(forecast_df, to_forecast_column, forecasted_column)
+    
+    if plot_results:
+        walk_results = walk_forward_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, n_splits=5)
+        expanding_results = expanding_window_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, initial_train_size=100)
+        rolling_results = rolling_window_validation(naive_df, forecast_df, to_forecast_column, forecasted_column, steps=30, window_size=100)
+        plot_validation_results(walk_results, expanding_results, rolling_results)
+        check_forecast_residuals(forecast_df, to_forecast_column, forecasted_column)
 
     comparison_results = compare_forecast_models(naive_df, baseline_df, forecast_df, to_forecast_column, forecasted_column, baseline_column = baseline_column)
     formatted_results_df = format_comparison_results(comparison_results)
-    display(formatted_results_df)
+    
+    if plot_results:
+        display(formatted_results_df)
+
     return model_metrics, comparison_results
 
-def test_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, n_test = 60, baseline_column = 'naive_forecast'):
+def test_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, n_test = 60, baseline_column = 'naive_forecast', plot_results = True):
     print_title('TEST TEMPORAL BACKTESTING')
-    plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
+    if plot_results:
+        plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
 
     model_metrics = calculate_forecast_metrics(naive_df, forecast_df, to_forecast_column, forecasted_column)
 
-    comparison_results = compare_forecast_models(naive_df[:-n_test], baseline_df[:-n_test], forecast_df[:-n_test], to_forecast_column, forecasted_column , baseline_column = baseline_column)
+    if plot_results:
+        comparison_results = compare_forecast_models(naive_df[:-n_test], baseline_df[:-n_test], forecast_df[:-n_test], to_forecast_column, forecasted_column , baseline_column = baseline_column)
     formatted_results_df = format_comparison_results(comparison_results)
-    display(formatted_results_df)
+
+    if plot_results:
+        display(formatted_results_df)
+        
     return model_metrics, comparison_results

@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from statsmodels.tsa.holtwinters import Holt, ExponentialSmoothing
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 
 def naive_forecast(df, forecast_column, date_column="date", steps=30):
     df_forecast = df.copy()
@@ -52,3 +54,138 @@ def random_walk_forecast(df, forecast_column, date_column="date", steps=30, drif
     df_final = pd.concat([df_forecast, future_forecast], ignore_index=True)
 
     return df_final
+
+def exponential_smoothing_forecast(transformed_df, forecast_column, steps=60):
+    df = transformed_df.copy()
+    df['date'] = pd.to_datetime(df['date'])
+    df.sort_values('date', inplace=True)
+
+    ts = df[forecast_column]
+    model = SimpleExpSmoothing(ts, initialization_method="estimated").fit()
+
+    fitted_values = model.fittedvalues
+    df['exponential_smoothing_forecast'] = fitted_values
+    df.iloc[0, df.columns.get_loc('exponential_smoothing_forecast')] = float('nan')
+
+    df['is_future_forecast'] = False
+
+    future_forecast = model.forecast(steps)
+    last_date = df['date'].max()
+    future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, steps + 1)]
+
+    future_df = pd.DataFrame({
+        'date': future_dates,
+        forecast_column: [pd.NA] * steps,
+        'exponential_smoothing_forecast': future_forecast,
+        'is_future_forecast': [True] * steps
+    })
+
+    for col in transformed_df.columns:
+        if col not in future_df.columns:
+            future_df[col] = pd.NA
+
+    cols = list(transformed_df.columns) + ['exponential_smoothing_forecast', 'is_future_forecast']
+    future_df = future_df[cols]
+    result_df = pd.concat([df, future_df], ignore_index=True)
+    return result_df
+
+
+def holt_forecast(transformed_df, forecast_column, steps=60):
+    df = transformed_df.copy()
+    df['date'] = pd.to_datetime(df['date'])
+    df.sort_values('date', inplace=True)
+
+    ts = df[forecast_column]
+    model = Holt(ts, initialization_method="estimated").fit()
+
+    fitted_values = model.fittedvalues
+    df['holt_forecast'] = fitted_values
+    df.iloc[0, df.columns.get_loc('holt_forecast')] = float('nan')
+
+    df['is_future_forecast'] = False
+
+    future_forecast = model.forecast(steps)
+    last_date = df['date'].max()
+    future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, steps + 1)]
+
+    future_df = pd.DataFrame({
+        'date': future_dates,
+        forecast_column: [pd.NA] * steps,
+        'holt_forecast': future_forecast,
+        'is_future_forecast': [True] * steps
+    })
+
+    for col in transformed_df.columns:
+        if col not in future_df.columns:
+            future_df[col] = pd.NA
+
+    cols = list(transformed_df.columns) + ['holt_forecast', 'is_future_forecast']
+    future_df = future_df[cols]
+
+    result_df = pd.concat([df, future_df], ignore_index=True)
+    return result_df
+
+def holt_winters_forecast(transformed_df, forecast_column, seasonal='add', trend='add', seasonal_periods= 30, steps=60):
+    df = transformed_df.copy()
+    df['date'] = pd.to_datetime(df['date'])
+    df.sort_values('date', inplace=True)
+    
+    ts = df[forecast_column]
+    model = ExponentialSmoothing(ts, seasonal=seasonal, trend=trend, seasonal_periods=seasonal_periods, initialization_method="estimated").fit()
+    fitted_values = model.fittedvalues
+    df['holt_winters_forecast'] = fitted_values
+    df.iloc[0, df.columns.get_loc('holt_winters_forecast')] = float('nan')
+    df['is_future_forecast'] = False
+
+    future_forecast = model.forecast(steps)
+    last_date = df['date'].max()
+    future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, steps + 1)]
+    future_df = pd.DataFrame({
+        'date': future_dates,
+        forecast_column: [pd.NA] * steps,
+        'holt_winters_forecast': future_forecast,
+        'is_future_forecast': [True] * steps
+    })
+    for col in transformed_df.columns:
+        if col not in future_df.columns:
+            future_df[col] = pd.NA
+
+    cols = list(transformed_df.columns) + ['holt_winters_forecast', 'is_future_forecast']
+    future_df = future_df[cols]
+    result_df = pd.concat([df, future_df], ignore_index=True)
+    return result_df
+
+def moving_average_forecast(transformed_df, forecast_column, steps=60, window=7):
+    df = transformed_df.copy()
+    df['date'] = pd.to_datetime(df['date'])
+    df.sort_values('date', inplace=True)
+
+    df['moving_average_forecast'] = df[forecast_column].rolling(window=window).mean().shift(1)
+    df.iloc[0, df.columns.get_loc('moving_average_forecast')] = float('nan')
+    df['is_future_forecast'] = False
+
+    # Iterative forecast: update window with forecasted values
+    series = df[forecast_column].tolist()
+    future_forecasts = []
+    for _ in range(steps):
+        forecast_val = sum(series[-window:]) / window
+        future_forecasts.append(forecast_val)
+        series.append(forecast_val)
+
+    last_date = df['date'].max()
+    future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, steps + 1)]
+    future_df = pd.DataFrame({
+        'date': future_dates,
+        forecast_column: [pd.NA] * steps,
+        'moving_average_forecast': future_forecasts,
+        'is_future_forecast': [True] * steps
+    })
+
+    for col in transformed_df.columns:
+        if col not in future_df.columns:
+            future_df[col] = pd.NA
+
+    cols = list(transformed_df.columns) + ['moving_average_forecast', 'is_future_forecast']
+    future_df = future_df[cols]
+    result_df = pd.concat([df, future_df], ignore_index=True)
+    return result_df
