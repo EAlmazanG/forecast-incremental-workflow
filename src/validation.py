@@ -97,8 +97,12 @@ def calculate_forecast_metrics(df_naive, df_forecast, to_forecast_column, foreca
     except:
         df_forecast_clean = df_forecast.copy()
     df_merged = df_forecast_clean.merge(df_naive[["date", 'naive_forecast']], on="date", how="left")
-    valid_mask = df_merged[to_forecast_column].notna() & df_merged[forecasted_column].notna() & (df_merged["is_future_forecast"] == False)
-
+    valid_mask = (
+        df_merged[to_forecast_column].notna() &
+        df_merged[forecasted_column].notna() &
+        df_merged['naive_forecast'].notna() &
+        (df_merged["is_future_forecast"] == False)
+    )
     if valid_mask.sum() == 0:
         return {metric: np.nan for metric in ["MAE", "RMSE", "SMAPE", "MASE"]}
 
@@ -298,5 +302,5 @@ def test_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, foreca
 
     if plot_results:
         display(formatted_results_df)
-        
+
     return model_metrics, comparison_results
