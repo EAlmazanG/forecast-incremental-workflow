@@ -3,7 +3,6 @@ import pandas as pd
 
 def naive_forecast(df, forecast_column, date_column="date", steps=30):
     df_forecast = df.copy()
-    
     df_forecast[date_column] = pd.to_datetime(df_forecast[date_column])
     
     df_forecast["naive_forecast"] = df_forecast[forecast_column].shift(1)

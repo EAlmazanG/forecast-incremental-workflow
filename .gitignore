@@ -1,1 +1,5 @@
 .DS_Store
+*.pyc
+*.pyc
+*.pyc
+src/__pycache__/utils.cpython-310.pyc
