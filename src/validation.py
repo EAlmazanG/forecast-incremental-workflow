@@ -234,8 +234,12 @@ def compare_forecast_models(df_naive, df_baseline, df_forecast, to_forecast_colu
         df_baseline[["date", baseline_column]], on="date", how="left"
     )
 
-    valid_mask = df_merged[to_forecast_column].notna() & df_merged[forecasted_column].notna() & (df_merged["is_future_forecast"] == False)
-
+    valid_mask = (
+        df_merged[to_forecast_column].notna() &
+        df_merged[forecasted_column].notna() &
+        df_merged['naive_forecast'].notna() &
+        (df_merged["is_future_forecast"] == False)
+    )
     if valid_mask.sum() == 0:
         return {metric: np.nan for metric in ["MAE", "RMSE", "SMAPE", "MASE"]}
 
