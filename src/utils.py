@@ -28,7 +28,7 @@ def format_columns(df, datetime_columns=[], int64_columns=[], float64_columns=[]
 
     for col in int64_columns:
         if col in df.columns:
-            df[col] = df[col].astype('Int64')  
+            df[col] = df[col].astype('int64')  
 
     for col in float64_columns:
         if col in df.columns:
