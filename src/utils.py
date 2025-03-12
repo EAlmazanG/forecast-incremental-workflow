@@ -78,26 +78,29 @@ def check_transformations(df_selection):
     for col in numeric_vars:
         result = {}
 
+        # Augmented Dickey-Fuller test for stationarity
         p_value = adfuller(df_selection[col].dropna())[1]
         result["stationary"] = p_value < 0.05  # True = Stationary, False = Not Stationary
-        
+
         if not result["stationary"]:  # If not stationary
-            if df_selection[col].min() > 0:  # Check if all values are positive
-                boxcox_lambda = boxcox(df_selection[col] + 1)[1]  # +1 to avoid log(0) errors
+            if (df_selection[col] > 0).all():  # Ensure all values are positive for Box-Cox & Log
+                _, boxcox_lambda = boxcox(df_selection[col] + 1)
+                
                 if abs(boxcox_lambda - 1) > 0.1:
                     result["recommended_transformation"] = "boxcox"
                 else:
                     result["recommended_transformation"] = "log"
             else:
-                result["recommended_transformation"] = "diff"
+                result["recommended_transformation"] = "diff"  # Differencing for non-positive values
         else:
-            result["recommended_transformation"] = "none"
-        
+            result["recommended_transformation"] = "none"  # No transformation needed
+
         transformations_needed[col] = result
 
     transformations_df = pd.DataFrame(transformations_needed).T
     print(transformations_df)
     return transformations_df
+
         
 def apply_transformations(df_selection, transformations):
     df_transformed = df_selection.copy()
