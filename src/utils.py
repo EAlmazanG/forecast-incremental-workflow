@@ -15,7 +15,7 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from scipy.stats import boxcox
-
+from sklearn.feature_selection import VarianceThreshold
 
 def print_title(title, line_length = 60, symbol = '-'):
     separator = symbol * ((line_length - len(title) - 2) // 2)
@@ -203,3 +203,123 @@ def apply_transformations(df_selection, transformations):
     print("Transformations applied successfully.")
     display(df_transformed.head())
     return df_transformed
+
+def calculate_vif(df):
+    return pd.Series([variance_inflation_factor(df.values, i) for i in range(df.shape[1])], index=df.columns)
+
+def filter_relevant_features(df, threshold_corr=0.9, threshold_vif=10, threshold_var=1e-6):
+    removed_features = {"low_variance": [], "high_correlation": [], "high_vif": []}
+
+    # Remove low variance features
+    selector = VarianceThreshold(threshold_var)
+    selector.fit(df)
+    low_var_cols = df.columns[~selector.get_support()]
+    if low_var_cols.any():
+        print(f"Removing low variance features: {list(low_var_cols)}")
+        df = df.drop(columns=low_var_cols)
+        removed_features["low_variance"].extend(low_var_cols)
+    else:
+        print("No low variance features removed.")
+    
+    # Remove highly correlated features
+    corr_matrix = df.corr().abs()
+    while True:
+        upper_tri = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        max_corr = upper_tri.max().max()
+
+        if max_corr < threshold_corr:
+            break
+        most_corr_pair = np.where(upper_tri == max_corr)
+        col1, col2 = upper_tri.columns[most_corr_pair[1][0]], upper_tri.index[most_corr_pair[0][0]]
+
+        drop_col = col1 if corr_matrix[col1].mean() > corr_matrix[col2].mean() else col2
+
+        print(f"Removing highly correlated feature: {drop_col}")
+        df = df.drop(columns=[drop_col])
+        removed_features["high_correlation"].append(drop_col)
+
+        corr_matrix = df.corr().abs()
+
+    # Remove high VIF features iteratively
+    vif_data = calculate_vif(df)
+    while vif_data.max() > threshold_vif:
+        max_vif_col = vif_data.idxmax()
+        print(f"Removing high VIF feature: {max_vif_col} (VIF={vif_data[max_vif_col]:.2f})")
+        df = df.drop(columns=[max_vif_col])
+        removed_features["high_vif"].append(max_vif_col)
+        vif_data = calculate_vif(df)
+
+    return df, removed_features
+
+def add_lag_and_ma_features(df, lag_features, lags=None, ma_windows=None):
+    transformed_df = df.copy()
+    created_features = []
+
+    if lags:
+        for lag in lags:
+            for feature in lag_features:
+                col_name = f"{feature}_lag{lag}"
+                transformed_df[col_name] = transformed_df[feature].shift(lag)
+                created_features.append(col_name)
+
+    if ma_windows:
+        for ma in ma_windows:
+            for feature in lag_features:
+                col_name = f"{feature}_ma{ma}"
+                transformed_df[col_name] = transformed_df[feature].shift(1).rolling(window=ma).mean()
+                created_features.append(col_name)
+
+    return transformed_df, created_features
+
+def analyze_cointegration(trace_stat, critical_values, eigenvectors, columns, significance_level=0.05):
+    significance_index = {0.10: 0, 0.05: 1, 0.01: 2}[significance_level]
+    
+    num_cointegrations = 0
+    for i in range(len(trace_stat)):
+        if trace_stat[i] > critical_values[i, significance_index]:
+            num_cointegrations += 1
+        else:
+            break
+    
+    result = {
+        "significance_level": significance_level,
+        "num_cointegrations": num_cointegrations,
+        "cointegration_detected": num_cointegrations > 0,
+        "trace_statistic": trace_stat.tolist(),
+        "critical_values": critical_values[:, significance_index].tolist(),
+        "vecm_rank": num_cointegrations
+    }
+
+    print("\n===== Johansen Cointegration Test =====")
+    print(f"Cointegration Relations Detected: {num_cointegrations}")
+    print(f"Cointegration Present?: {'✅ Yes' if num_cointegrations > 0 else '❌ No'}\n")
+    print("Detailed Results:")
+    
+    for i, (ts, cv) in enumerate(zip(trace_stat, critical_values[:, significance_index])):
+        status = "✅ Reject H0 (Cointegration)" if ts > cv else "❌ Do not reject H0"
+        print(f"r ≤ {i}: Trace Statistic = {ts:.2f}, Critical Value ({significance_level*100}%) = {cv:.2f} → {status}")
+
+    if num_cointegrations > 0:
+        # Get the eigenvectors corresponding to cointegration relationships
+        cointegration_matrix = eigenvectors[:, :num_cointegrations]
+        
+        # Compute the absolute contributions of each feature to the cointegration vectors
+        cointegration_contributions = pd.DataFrame(
+            np.abs(cointegration_matrix),
+            index=columns,
+            columns=[f'Cointegration_{i+1}' for i in range(num_cointegrations)]
+        )
+        
+        # Rank features by their mean contribution across all cointegrating relationships
+        important_features = cointegration_contributions.mean(axis=1).sort_values(ascending=False)
+        selected_features = important_features.index.tolist()
+
+        print("\n🔹 Features contributing most to cointegration:")
+        print(important_features)
+
+        result["cointegrated_features"] = selected_features
+        print("\n✅ Selected Cointegrated Features:", selected_features)
+    else:
+        result["cointegrated_features"] = []
+
+    return result
