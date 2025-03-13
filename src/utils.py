@@ -230,8 +230,8 @@ def filter_relevant_features(df, threshold_corr=0.9, threshold_vif=10, threshold
         most_corr_pair = np.where(upper_tri == max_corr)
         col1, col2 = upper_tri.columns[most_corr_pair[1][0]], upper_tri.index[most_corr_pair[0][0]]
 
-        drop_col = col1 if corr_matrix[col1].mean().iloc[0] > corr_matrix[col2].mean().iloc[0] else col2
-
+        drop_col = col1 if corr_matrix[col1].mean() > corr_matrix[col2].mean() else col2
+        
         print(f"Removing highly correlated feature: {drop_col}")
         df = df.drop(columns=[drop_col])
         removed_features["high_correlation"].append(drop_col)
