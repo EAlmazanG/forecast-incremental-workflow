@@ -25,14 +25,17 @@ from src import utils
 from src.utils import print_title
 
 
-def plot_time_series_forecast(df, time_series, p_alpha=0.9, p_linestyle="--", plot_ci = True, use_ci_scale_factor = None):
+def plot_time_series_forecast(df, time_series, p_alpha=0.9, p_linestyle="--", plot_ci = True, use_ci_scale_factor = None, plot_future = True):
     fig, ax = plt.subplots(figsize=(20,6))
     
     colors = plt.get_cmap("tab10")(range(len(time_series)))
-    future_mask = df["is_future_forecast"] == True
+    if plot_future:
+        future_mask = df["is_future_forecast"] == True
 
-    if len(time_series) > 1:
-        first_future_date = df.loc[future_mask, "date"].min()
+        if len(time_series) > 1:
+            first_future_date = df.loc[future_mask, "date"].min()
+        else:
+            first_future_date = None
     else:
         first_future_date = None
         
@@ -43,27 +46,28 @@ def plot_time_series_forecast(df, time_series, p_alpha=0.9, p_linestyle="--", pl
         ax.plot(df["date"], df[serie], label=serie, linewidth=2, color=colors[i], alpha=alpha, linestyle=linestyle)
 
         if i > 0 and plot_ci:
-            mean_forecast = df.loc[future_mask, serie]
+            if plot_future:
+                mean_forecast = df.loc[future_mask, serie]
 
-            past_errors = df.loc[~future_mask, time_series[0]] - df.loc[~future_mask, serie]
-            std_dev = past_errors.std()  
-            
-            forecast_horizon = np.arange(1, len(mean_forecast) + 1) 
-            
-            if use_ci_scale_factor == 'log':
-                scale_factor = np.log1p(forecast_horizon)
-            elif use_ci_scale_factor == 'sqrt':
-                scale_factor = np.sqrt(forecast_horizon)
-            else:
-                scale_factor = 1
+                past_errors = df.loc[~future_mask, time_series[0]] - df.loc[~future_mask, serie]
+                std_dev = past_errors.std()  
+                
+                forecast_horizon = np.arange(1, len(mean_forecast) + 1) 
+                
+                if use_ci_scale_factor == 'log':
+                    scale_factor = np.log1p(forecast_horizon)
+                elif use_ci_scale_factor == 'sqrt':
+                    scale_factor = np.sqrt(forecast_horizon)
+                else:
+                    scale_factor = 1
 
-            lower_80 = mean_forecast - 1.28 * std_dev * scale_factor
-            upper_80 = mean_forecast + 1.28 * std_dev * scale_factor
-            lower_95 = mean_forecast - 1.96 * std_dev * scale_factor
-            upper_95 = mean_forecast + 1.96 * std_dev * scale_factor
-            
-            ax.fill_between(df.loc[future_mask, "date"], lower_95, upper_95, color=colors[i], alpha=0.2, label=f"{serie} 95% CI")
-            ax.fill_between(df.loc[future_mask, "date"], lower_80, upper_80, color=colors[i], alpha=0.4, label=f"{serie} 80% CI")
+                lower_80 = mean_forecast - 1.28 * std_dev * scale_factor
+                upper_80 = mean_forecast + 1.28 * std_dev * scale_factor
+                lower_95 = mean_forecast - 1.96 * std_dev * scale_factor
+                upper_95 = mean_forecast + 1.96 * std_dev * scale_factor
+                
+                ax.fill_between(df.loc[future_mask, "date"], lower_95, upper_95, color=colors[i], alpha=0.2, label=f"{serie} 95% CI")
+                ax.fill_between(df.loc[future_mask, "date"], lower_80, upper_80, color=colors[i], alpha=0.4, label=f"{serie} 80% CI")
 
 
     if first_future_date:
@@ -272,9 +276,9 @@ def format_comparison_results(comparison_results):
 
     return df_metrics
 
-def validate_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, baseline_column = 'naive_forecast', plot_results = True):
+def validate_forecast(naive_df, forecast_df, baseline_df, to_forecast_column, forecasted_column, baseline_column = 'naive_forecast', plot_results = True, plot_future = True):
     if plot_results:
-        plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt')
+        plot_time_series_forecast(forecast_df, [to_forecast_column, forecasted_column], 0.9, '--', True, 'sqrt', plot_future)
 
     model_metrics = calculate_forecast_metrics(naive_df, forecast_df, to_forecast_column, forecasted_column)
     
