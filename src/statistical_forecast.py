@@ -4,6 +4,9 @@ import pandas as pd
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.vector_ar.vecm import VECM
+from statsmodels.tsa.api import VAR
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 def AR_forecast(transformed_df, to_forecast_column, steps=60, lags=7):
     df = transformed_df.copy()
@@ -97,3 +100,53 @@ def sarima_forecast(transformed_df, to_forecast_column, steps=60, order=(1, 1, 1
     future_df = future_df[cols]
     result_df = pd.concat([df, future_df], ignore_index=True)
     return result_df
+
+def vecm_forecast(selected_exog_df, transformed_endog_df, to_forecast_column, vecm_rank):
+    endog_columns = transformed_endog_df.drop(columns=['date', to_forecast_column]).columns.tolist()
+    selected_exog_df = selected_exog_df.merge(transformed_endog_df[to_forecast_column], left_index=True, right_index=True, how='inner').drop(columns = [to_forecast_column])
+    vecm_model = VECM(transformed_endog_df[endog_columns + [to_forecast_column]], k_ar_diff=1, coint_rank= vecm_rank, exog=selected_exog_df)
+    vecm_fit = vecm_model.fit()
+
+    vecm_forecast = vecm_fit.predict(steps=len(transformed_endog_df), exog_fc=selected_exog_df)
+
+    vecm_forecast_df = pd.DataFrame(vecm_forecast, columns=endog_columns + [to_forecast_column])
+    vecm_forecast_df = transformed_endog_df.copy().merge(vecm_forecast_df[[to_forecast_column]].rename(columns={to_forecast_column:"vecm_forecast"}), left_index=True, right_index=True, how='inner')
+    vecm_forecast_df['is_future_forecast'] = False
+    return vecm_forecast_df
+
+def var_forecast(selected_exog_df, transformed_endog_df, to_forecast_column, maxlags = 1):
+    endog_columns = transformed_endog_df.drop(columns=['date', to_forecast_column]).columns.tolist()
+    selected_exog_df = selected_exog_df.merge(transformed_endog_df[to_forecast_column], 
+                                            left_index=True, right_index=True, how='inner').drop(columns=[to_forecast_column])
+    varx_model = VAR(endog=transformed_endog_df[endog_columns + [to_forecast_column]], exog=selected_exog_df)
+    varx_fit = varx_model.fit(maxlags=maxlags)
+    varx_forecast = varx_fit.forecast(y=transformed_endog_df[endog_columns + [to_forecast_column]].values, 
+                                    steps=len(transformed_endog_df), exog_future=selected_exog_df.values)
+
+    varx_forecast_df = pd.DataFrame(varx_forecast, columns=endog_columns + [to_forecast_column])
+
+    varx_forecast_df = transformed_endog_df.copy().merge(varx_forecast_df[[to_forecast_column]].rename(columns={to_forecast_column: "varx_forecast"}), 
+                                                        left_index=True, right_index=True, how='inner')
+    varx_forecast_df['is_future_forecast'] = False
+    return varx_forecast_df
+
+def sarimax_forecast(selected_exog_df, transformed_endog_df, to_forecast_column, order, seasonal_order):
+    selected_exog_df = selected_exog_df.merge(transformed_endog_df[to_forecast_column], 
+                                            left_index=True, right_index=True, how='inner').drop(columns=[to_forecast_column])
+
+    sarimax_model = SARIMAX(transformed_endog_df[to_forecast_column], 
+                            exog=selected_exog_df, 
+                            order=order, 
+                            seasonal_order=seasonal_order,
+                            enforce_stationarity=False, 
+                            enforce_invertibility=False)
+
+    sarimax_fit = sarimax_model.fit()
+    sarimax_forecast = sarimax_fit.predict(start=0, 
+                                        end=len(transformed_endog_df)-1, 
+                                        exog=selected_exog_df)
+
+    sarimax_forecast_df = transformed_endog_df.copy()
+    sarimax_forecast_df["sarimax_forecast"] = sarimax_forecast
+    sarimax_forecast_df['is_future_forecast'] = False
+    return sarimax_forecast_df
