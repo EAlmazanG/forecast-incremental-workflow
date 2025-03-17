@@ -52,6 +52,7 @@ def linear_regression_forecast(ml_features_df, to_forecast_column):
     X_scaled = scaler.fit_transform(X)
     linear_regression_forecast_df["linear_regression_forecast"] = lr_model.predict(X_scaled)
     linear_regression_forecast_df["is_future_forecast"] = False
+    linear_regression_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
 
     return linear_regression_forecast_df
 
@@ -93,6 +94,7 @@ def lasso_regression_forecast(ml_features_df, to_forecast_column, alpha=0.1):
 
     lasso_regression_forecast_df["lasso_regression_forecast"] = lasso_model.predict(X_scaled)
     lasso_regression_forecast_df["is_future_forecast"] = False
+    lasso_regression_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
 
     return lasso_regression_forecast_df
 
@@ -128,7 +130,8 @@ def decision_tree_forecast(ml_features_df, to_forecast_column, max_depth=4):
 
     decision_tree_forecast_df["decision_tree_forecast"] = dt_model.predict(X)
     decision_tree_forecast_df["is_future_forecast"] = False
-    
+    decision_tree_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
+
     return decision_tree_forecast_df
 
 def random_forest_forecast(ml_features_df, to_forecast_column, n_estimators=100, max_depth=8):
@@ -181,6 +184,7 @@ def random_forest_forecast(ml_features_df, to_forecast_column, n_estimators=100,
 
     random_forest_forecast_df["random_forest_forecast"] = rf_model.predict(X)
     random_forest_forecast_df["is_future_forecast"] = False
+    random_forest_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
 
     return random_forest_forecast_df
 
@@ -215,6 +219,7 @@ def xgboost_forecast(ml_features_df, to_forecast_column, max_depth=4, learning_r
     
     xgboost_forecast_df["xgboost_forecast"] = xgb_model.predict(X)
     xgboost_forecast_df["is_future_forecast"] = False
+    xgboost_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
 
     return xgboost_forecast_df
 
@@ -249,6 +254,7 @@ def lightgbm_forecast(ml_features_df, to_forecast_column, num_leaves=31, learnin
 
     lightgbm_forecast_df["lightgbm_forecast"] = lgb_model.predict(X)
     lightgbm_forecast_df['is_future_forecast'] = False
+    lightgbm_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
 
     return lightgbm_forecast_df
 
@@ -279,5 +285,6 @@ def catboost_forecast(ml_features_df, to_forecast_column, depth=3, learning_rate
 
     catboost_forecast_df["catboost_forecast"] = catboost_model.predict(X)
     catboost_forecast_df['is_future_forecast'] = False
+    catboost_forecast_df.loc[X_test.index, 'is_future_forecast'] = True
 
     return catboost_forecast_df
