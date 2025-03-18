@@ -188,7 +188,7 @@ def random_forest_forecast(ml_features_df, to_forecast_column, n_estimators=100,
 
     return random_forest_forecast_df
 
-def xgboost_forecast(ml_features_df, to_forecast_column, max_depth=4, learning_rate=0.05, n_estimators=200):
+def xgboost_forecast(ml_features_df, to_forecast_column, max_depth=3, learning_rate=0.025, n_estimators=300):
     xgboost_forecast_df = ml_features_df.copy()
     
     X = xgboost_forecast_df.drop(columns=[to_forecast_column, "date"])
@@ -204,8 +204,8 @@ def xgboost_forecast(ml_features_df, to_forecast_column, max_depth=4, learning_r
         learning_rate=learning_rate,
         n_estimators=n_estimators,
         objective="reg:squarederror",
-        colsample_bytree=0.8,
-        subsample=0.8,
+        colsample_bytree=1,
+        subsample=0.5,
         reg_lambda=10,
         reg_alpha=2,
         random_state=42,
