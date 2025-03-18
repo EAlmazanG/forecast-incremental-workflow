@@ -117,11 +117,17 @@ def apply_transformations(df_selection, transformations):
     print("Transformations applied successfully.")
     return df_transformed
 
-def plot_acf_and_pacf(input_df, additional_text = ''):
+def plot_acf_and_pacf(input_df, additional_text=''):
     fig, axes = plt.subplots(1, 2, figsize=(16, 3))
 
-    plot_acf(input_df, ax=axes[0], lags=50, zero = False)
-    plot_pacf(input_df, ax=axes[1], lags=50, zero = False)
+    acf_plot = plot_acf(input_df, ax=axes[0], lags=50, zero=False)
+    pacf_plot = plot_pacf(input_df, ax=axes[1], lags=50, zero=False)
+
+    acf_max = max(abs(axes[0].lines[1].get_ydata())) * 1.2
+    pacf_max = max(abs(axes[1].lines[1].get_ydata())) * 1.2
+
+    axes[0].set_ylim(-acf_max, acf_max)
+    axes[1].set_ylim(-pacf_max, pacf_max)
 
     axes[0].set_title("ACF" + additional_text, fontsize=14, fontweight='bold')
     axes[1].set_title("PACF" + additional_text, fontsize=14, fontweight='bold')

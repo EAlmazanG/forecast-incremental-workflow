@@ -238,10 +238,11 @@ def lightgbm_forecast(ml_features_df, to_forecast_column, num_leaves=31, learnin
         learning_rate=learning_rate, 
         n_estimators=n_estimators,
         max_depth=max_depth,
-        colsample_bytree=0.8,
-        subsample=0.8,
-        reg_lambda=10,
-        reg_alpha=3,
+        colsample_bytree=0.7,
+        subsample=0.7,
+        reg_lambda=15,
+        reg_alpha=10,
+        min_child_samples=20,
         random_state=42
     )
 
