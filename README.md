@@ -68,7 +68,7 @@ forecast-incremental-workflow/
 - Automated checks on each feature to identify required transformations based on distribution and stationarity.
 - Functions to apply transformations efficiently.
 
-![Validation](img/cross.png)
+![Validation](img/corr.png)
 
 ### Validation Framework
 - Compare real vs forecasted values with confidence intervals.
