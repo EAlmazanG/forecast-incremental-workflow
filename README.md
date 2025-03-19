@@ -91,10 +91,14 @@ forecast-incremental-workflow/
 #### Statistical Models
 Iteratively optimized AR, ARMA, ARIMA, SARIMA. Best suited due to strong autoregressive characteristics evidenced by ACF/PACF.
 
+![Project Structure](img/ar.png)
+
 #### Multivariate Models
 - Feature encoding (one-hot) and generation (lags, moving averages).
 - Collinearity and correlation checks.
 - VARX, VECM, SARIMAX applied, with SARIMAX outperforming others due to complexity and cointegration constraints.
+
+![Project Structure](img/sarimax.png)
 
 #### Machine Learning Models
 - Linear Regression, Lasso
@@ -103,10 +107,11 @@ Iteratively optimized AR, ARMA, ARIMA, SARIMA. Best suited due to strong autoreg
 
 ML models demonstrated superior performance but exhibited higher susceptibility to overfitting, especially with limited data.
 
+![Project Structure](img/light.png)
+
 ### Stacking and Model Integration
 A stacking approach combining SARIMAX with top-performing ML models provided optimal results, balancing complexity with accuracy.
 
-![Stacking](img/stacking.png)
 
 ## Conclusions
 Optimal forecasting balances simplicity and accuracy. Incremental improvements in accuracy must justify increased complexity. SARIMAX combined with selected ML models typically provides the best balance for practical forecasting.
