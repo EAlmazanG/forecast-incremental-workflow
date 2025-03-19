@@ -68,6 +68,8 @@ forecast-incremental-workflow/
 - Automated checks on each feature to identify required transformations based on distribution and stationarity.
 - Functions to apply transformations efficiently.
 
+![Validation](img/cross.png)
+
 ### Validation Framework
 - Compare real vs forecasted values with confidence intervals.
 - Calculate validation metrics (MAE, RMSE, SMAPE, MASE).
@@ -89,7 +91,7 @@ forecast-incremental-workflow/
 - Moving Average
 
 #### Statistical Models
-Iteratively optimized AR, ARMA, ARIMA, SARIMA. Best suited due to strong autoregressive characteristics evidenced by ACF/PACF.
+Iteratively optimized AR, ARMA, ARIMA, SARIMA. Best suited due to strong autoregressive characteristics of the dateset, evidenced by ACF/PACF.
 
 ![Project Structure](img/ar.png)
 
@@ -105,7 +107,7 @@ Iteratively optimized AR, ARMA, ARIMA, SARIMA. Best suited due to strong autoreg
 - Decision Tree, Random Forest
 - XGBoost, LightGBM, CatBoost (with hyperparameter tuning and early stopping)
 
-ML models demonstrated superior performance but exhibited higher susceptibility to overfitting, especially with limited data.
+ML models demonstrated superior performance in the selected dataset, but exhibited higher susceptibility to overfitting, especially with limited data.
 
 ![Project Structure](img/light.png)
 
@@ -114,7 +116,7 @@ A stacking approach combining SARIMAX with top-performing ML models provided opt
 
 
 ## Conclusions
-Optimal forecasting balances simplicity and accuracy. Incremental improvements in accuracy must justify increased complexity. SARIMAX combined with selected ML models typically provides the best balance for practical forecasting.
+Optimal forecasting balances simplicity and accuracy. Incremental improvements in accuracy must justify increased complexity.
 
 <br></br>
 
