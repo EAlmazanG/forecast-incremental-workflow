@@ -2,7 +2,6 @@
 
 ![Project Structure](img/project_structure.png)
 
-<br></br>
 
 ## Overview
 **Forecast Incremental Workflow** is designed to implement a structured incremental approach to forecasting. Starting from basic methods (Naïve, Moving Average) and evolving towards advanced techniques (ARIMA, SARIMA, ETS, VAR, XGBoost), it systematically evaluates each model, identifying the most suitable forecasting approach based on data characteristics and validation metrics. The project uses daily rental bike data, combining endogenous and exogenous variables for comprehensive analysis.
