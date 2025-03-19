@@ -1,6 +1,6 @@
 # Forecast Incremental Workflow
 
-![Project Structure](img/project.png)
+![Project Structure](img/project_structure.png)
 
 <br></br>
 
